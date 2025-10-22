@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红线上的宴请</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            touch-action: manipulation; /* Prevents double-tap zoom on mobile */
+        }
+        .animated-gradient-bg {
+            background: linear-gradient(-45deg, #f6d365, #fda085, #ffdde1, #f5f7fa);
+            background-size: 400% 400%;
+            animation: gradient 20s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .main-container {
+            background-color: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .option-button {
+            transition: all 0.2s ease-in-out;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .option-button:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.8);
+            border-color: rgba(96, 165, 250, 0.5); /* blue-400 */
+        }
+        .action-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        .action-button:active {
+            transform: translateY(0px) scale(0.98);
+        }
+        .screen {
+            display: none;
+            animation-duration: 0.6s;
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            animation-fill-mode: forwards;
+            width: 100%;
+            height: 100%;
+        }
+        .screen.active { display: flex; animation-name: fadeIn; }
+        .screen.exiting { animation-name: fadeOut; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-20px) scale(0.98); }
+        }
+        .progress-bar-fill {
+            transition: width 0.5s ease-in-out;
+        }
+        .scenario-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .scenario-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #c92a2a, #862e9c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="animated-gradient-bg flex items-center justify-center min-h-screen p-2 sm:p-4">
+
+    <div class="w-full max-w-4xl mx-auto main-container shadow-2xl rounded-3xl overflow-hidden flex flex-col" style="min-height: 95vh; @media (min-width: 640px) { min-height: 90vh; } @media (min-width: 768px) { min-height: 85vh; }">
+        
+        <header id="game-header" class="p-4 bg-white/30 border-b border-white/20 hidden">
+            <h2 class="text-xl font-bold text-center text-gray-800">清廉指数</h2>
+            <div class="w-full bg-black/10 rounded-full h-4 mt-2 overflow-hidden">
+                <div id="integrity-bar" class="bg-blue-500 h-4 rounded-full progress-bar-fill flex items-center justify-end">
+                    <span id="integrity-score" class="pr-2 text-xs font-bold text-white leading-none">100</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow relative overflow-hidden">
+            <!-- Start Screen -->
+            <div id="start-screen" class="screen active p-6 sm:p-8 flex-col items-center justify-center text-center">
+                <div class="w-full aspect-[4/3] bg-black/10 rounded-xl mb-6 flex-shrink-0 overflow-hidden">
+                    <img src="1.jpg" alt="欢迎页面图片" class="w-full h-full object-cover">
+                </div>
+                <div class="w-full max-w-2xl">
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 gradient-text">《红线上的宴请》</h1>
+                    <p class="text-gray-700 mx-auto mb-8 text-base sm:text-lg leading-relaxed">
+                        同志，欢迎来到《红线上的宴请》。在这场模拟中，你将亲身体验一场商务宴请中，三位关键人物的处境。一场看似寻常的商务宴请，即将考验你的原则、判断与勇气。你的每一个选择，都将导向截然不同的结局。纪律与风险的边界，比你想象的更模糊。你的旅程，现在开始。
+                    </p>
+                    <button onclick="startGame()" class="action-button px-10 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:shadow-xl text-lg sm:text-xl">
+                        开始模拟
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Game Screen -->
+            <div id="game-screen" class="screen p-4 sm:p-6 md:p-10 flex-col overflow-y-auto">
+                 <div class="w-full aspect-[4/3] bg-black/10 rounded-xl mb-6 flex-shrink-0 overflow-hidden">
+                    <!-- *** MODIFIED: Added id="act-image" *** -->
+                    <img id="act-image" src="2.jpg" alt="游戏场景图片" class="w-full h-full object-cover">
+                </div>
+                <div class="mb-6 pb-4 border-b border-gray-900/10">
+                    <p class="text-lg font-bold text-blue-700" id="character-info"></p>
+                    <p class="text-sm text-gray-600 mt-1" id="scene-info"></p>
+                </div>
+                <div class="flex-grow space-y-6 text-gray-800 leading-relaxed text-base sm:text-lg">
+                    <div id="dialogue-container"></div>
+                    <div class="p-4 bg-blue-500/10 border-l-4 border-blue-400 rounded-r-lg">
+                        <p class="font-semibold text-gray-900">内心独白:</p>
+                        <p class="italic text-gray-700" id="monologue-text"></p>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <p class="font-bold text-gray-900 mb-4 text-base sm:text-lg" id="choice-prompt"></p>
+                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+            
+            <!-- Result Screen -->
+            <div id="result-screen" class="screen p-4 sm:p-8 flex-col items-center justify-center text-center overflow-y-auto">
+                <div class="w-full aspect-[4/3] bg-black/10 rounded-xl mb-6 relative overflow-hidden flex-shrink-0">
+                    <!-- 结局图片将通过JavaScript动态加载到这里 -->
+                    <div id="result-image-container" class="w-full h-full bg-slate-200">
+                         <!-- 默认占位符, 会被JS替换 -->
+                         <div class="w-full h-full flex items-center justify-center">
+                            <span class="text-slate-400">结局图片</span>
+                         </div>
+                    </div>
+                    <div id="result-icon-container" class="absolute inset-0 flex items-center justify-center bg-black/20 rounded-xl">
+                        <!-- Icon (checkmark/cross) will be injected here to overlay on top of the image -->
+                    </div>
+                </div>
+                <div id="result-content" class="w-full"></div>
+                <div id="action-buttons" class="mt-8 flex flex-wrap items-center justify-center gap-4 w-full">
+                    <button id="action-button" class="action-button w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none"></button>
+                    <button onclick="showMoreScenarios()" id="more-scenarios-button" class="action-button w-full sm:w-auto hidden px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg">更多剧本</button>
+                    <button onclick="restartGame()" id="restart-button" class="action-button w-full sm:w-auto hidden px-6 py-3 bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg">重新开始</button>
+                </div>
+            </div>
+
+            <!-- Appendix Screen -->
+            <div id="appendix-screen" class="screen p-4 sm:p-6 md:p-10 flex-col overflow-y-auto">
+                <h2 class="text-xl sm:text-2xl font-bold text-center mb-6 text-gray-800">违纪行为与法规对照表</h2>
+                <div class="overflow-x-auto flex-grow bg-white/50 rounded-lg p-1">
+                    <table id="appendix-table" class="min-w-full bg-transparent">
+                        <thead class="bg-black/5">
+                            <tr>
+                                <th class="py-3 px-4 border-b border-black/10 text-left text-sm font-bold text-gray-600 uppercase">角色 & 错误选项</th>
+                                <th class="py-3 px-4 border-b border-black/10 text-left text-sm font-bold text-gray-600 uppercase">违纪行为性质</th>
+                                <th class="py-3 px-4 border-b border-black/10 text-left text-sm font-bold text-gray-600 uppercase">主要适用法规条款</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-8">
+                    <button onclick="hideAppendix()" class="action-button px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg">返回</button>
+                </div>
+            </div>
+
+             <!-- More Scenarios Screen -->
+            <div id="more-scenarios-screen" class="screen p-4 sm:p-6 md:p-10 flex-col overflow-y-auto">
+                <h2 class="text-2xl sm:text-3xl font-bold text-center mb-8 text-gray-800">更多剧本</h2>
+                <div id="more-scenarios-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 flex-grow">
+                    <!-- Scenario cards will be injected here -->
+                </div>
+                 <div class="text-center mt-8">
+                    <button onclick="showScreen('result-screen')" class="action-button px-6 py-3 bg-gray-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg">返回</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- GAME DATA (*** MODIFIED ***) ---
+        const gameData = {
+            acts: [
+                {
+                    character: "张伟，业务部经理",
+                    scene: "故事发生在一个典型的、业绩卓著的国有企业：环境繁忙而专业，但近期有很大的业绩压力。你扮演的张伟是一位能力出众、渴望晋升的业务骨干。",
+                    actImageUrl: "2.jpg", // <-- 场景图片 1
+                    dialogue: [ { speaker: "刘主任", line: "小张，和天悦集团的合作项目到了关键阶段。他们的王副总正好在咱们市里，这个合同对我们完成年度指标至关重要。我需要你今晚安排一次晚宴，好好招待一下他们，拿出我们的诚意。" }, { speaker: "张伟", line: "好的刘主任，我马上去饭店预订房间。" }, { speaker: "刘主任", line: "王总是我的一位老朋友，安排得有点特色，要让客人印象深刻。预算方面不要卡得太死，首要任务是让客人感受到我们的重视。这都是为了公司的利益。去办吧。" } ],
+                    monologue: "这是一次考验。‘诚意’和‘不要卡得太死’都是暗号。公司的《商务招待管理规定》写得清清楚楚：人均限额、禁用高档酒水、指定接待场所。但刘主任的晋升推荐权就在眼前。如果我完全按规定办，他会觉得我死板、不会办事。如果我违规了……真正的风险又是什么？",
+                    options: [
+                        { text: "起草一份严格遵守公司制度的正式招待方案。建议将晚宴安排在公司下属的酒家，并精心设计一份符合预算的菜单。将此方案呈报给刘主任。", isCorrect: true },
+                        { text: "你在一家豪华餐厅安排了晚宴，席间点了昂贵的酒水菜肴。宴会结束后，你对餐厅经理说：“我们是大型国企，这笔款先记一下账，过段时间我们统一走流程支付。”你利用公司的名头，将这笔超标的费用暂时搁置，未当场支付也未立即报销。", isCorrect: false, outcome: { title: "结局：傲慢的“白条”", imageUrl: "3.jpg", result: "餐厅在多次催款未果后，将一封附有详细消费清单的催款函直接寄到了公司纪委。工作人员迅速介入，查明了你（张伟）滥用国企身份“打白条”吃喝、严重超标接待的事实。你的行为不仅违反了廉洁纪律，更损害了公司的声誉和信誉。你受到 党内警告 和 政务记过 处分，被责令个人承担全部宴请费用，并被调离业务岗位。", regulations: "《中国共产党纪律处分条例》（2023年版）第一百一十六条： “违反接待管理规定，超标准、超范围接待或者借机大吃大喝，……情节较重的，给予警告或者严重警告处分……” 。" }},
+                        { text: "你致电王副总的助理，委婉地透露了预算限制。对方心领神会地建议：“没关系，王总在‘静澜会所’做东，你们作为他的客人来就行了。”你欣然同意，认为这是一个完美的解决方案，公司无需花费分文。", isCorrect: false, outcome: { title: "结局：危险的“免费午餐”", imageUrl: "4.jpg", result: "一封匿名举报信称，公司高管与重要业务伙伴频繁出入私人会所。经查，你的行为被认定为接受可能影响公正执行公务的宴请，严重违反廉洁纪律。你受到党内警告处分。", regulations: "《中国共产党纪律处分条例》（2023年版）第一百零一条： “接受、提供可能影响公正执行公务的宴请……情节严重的，给予警告或者严重警告处分。” 。" }},
+                        { text: "选择一家中档的酒店，以显得合规。在晚宴上，你点了数瓶高档白酒和鱼翅汤等昂贵菜品，并打算让酒店开具一张笼统的“餐饮费”发票，以隐藏具体消费明细。", isCorrect: false, outcome: { title: "结局：“隐身衣”下的放纵", imageUrl: "5.jpg", result: "这张模糊的发票被财务部新上线的“AI智能审计系统”标记为高风险。在后续核查中，酒店的消费详单被调取，高档酒水和高档菜品暴露无遗。这被认定为典型的为违规吃喝穿上“隐身衣”的行为。你受到党内警告处分，并被责令个人承担全部宴请费用。", regulations: "《国有企业商务招待管理规定》第七条： 明文禁止提供高档酒水及鱼翅、燕窝等高档菜肴 。《中国共产党纪律处分条例》（2023年版）第一百一十六条： “违反接待管理规定，超标准、超范围接待或者借机大吃大喝，对直接责任者和领导责任者，情节较重的，给予警告或者严重警告处分；情节严重的，给予撤销党内职务处分。” 。" }}
+                    ]
+                },
+                {
+                    character: "李静，财务部职员",
+                    scene: "现在，你扮演的是李静，一位以严谨和原则性著称的财务人员。你并未收到任何报销申请。一天，你接到了一家高档餐厅的催款电话，称公司有一笔数额巨大的餐饮费长期未结。你核查后发现，公司系统内没有任何关于这笔招待的申请或记录。不久，餐厅的正式催款函和消费详单寄到了财务部。",
+                    actImageUrl: "6.png", // <-- 场景图片 2
+                    dialogue: [{ speaker: "刘主任", line: "小李，我听说餐厅为天悦项目那顿饭的事找过来了。那是一项至关重要的业务活动，不能因为流程问题影响了公司信誉。你想想办法，把这笔账处理掉，要处理得干净。" }],
+                    monologue: "‘想办法’、‘处理干净’，这都是让我违规操作的指令。这笔消费完全没有事前审批，而且严重超标。现在要平这笔账，就意味着要做假账。制度是我的护身符，但直接拒绝可能会被贴上‘阻碍工作’的标签。我该怎么办？",
+                    choicePrompt: "刘主任的话语还在耳边回响，催款函和超标的消费清单就摆在你的桌上。你该怎么做？",
+                    options: [
+                        { text: "你将催款函、消费清单以及与刘主任的谈话要点，一同正式向财务总监书面报告。报告中明确指出该笔费用缺乏合规审批流程，且内容严重超标，请求组织介入处理。", isCorrect: true },
+                        { text: "你叹了口气，决定听从刘主任的指示。你找到张伟，让他补填了一份日期倒签的招待申请，然后你做了一套假的会计凭证，将这笔费用伪装成“项目咨询费”入账并支付给了餐厅。", isCorrect: false, outcome: { title: "结局：被动的同谋", imageUrl: "7.png", /* <-- MODIFIED */ result: "审计的电子痕跡清晰地显示你制作并批准了虚假的会计凭证。你辩称自己“只是奉命行事”的理由被驳回。作为财务专业人员，你有责任和义务捍卫财经纪律。你因工作失职被问责，受到 党内警告及政务记过 处分。", regulations: "《中国共产党纪律处分条例》（2023年版）第三十条“违反国家财经纪律，在公共资金收支、税务管理、国有资产管理、政府采购管理、金融管理、财务会计管理等财经活动中有违法行为的，依照前款规定处理。”、《中华人民共和国公职人员政务处分法》第三十九条：你的不作为被视为未能正确履行职责。" }},
+                        { text: "你决定为领导“主动分忧”。你打电话给餐厅，要求他们将总费用拆分成几张小额发票，分别开具为“会议费”、“材料费”等不同名目。然后你将这些费用分摊到几个不同的小项目预算里报了上去，以规避审查。", isCorrect: false, outcome: { title: "结局：瞒天过海的代价", imageUrl: "8.png", /* <-- MODIFIED */ result: "这种“化整为零”的造假手法在专项审计中被大数据系统识别为异常。工作人员顺藤摸瓜，很快查清了真相。你的行为被认定为主动参与财务造假，性质比被动执行更为恶劣。你受到 党内严重警告 和 政务降级 处分。", regulations: "《中国共产党纪律处分条例》（2023年版）第三十条：“违反国家财经纪律，在公共资金收支、税务管理、国有资产管理、政府采购管理、金融管理、财务会计管理等财经活动中有违法行为的，依照前款规定处理。”、《中华人民共和国公职人员政务处分法》第三十九条：你的不作为被视为未能正确履行职责。" }},
+                        { text: "你找到张伟，告诉他：“这笔账现在没法处理，太明显了。你去找找别的项目的供应商，看谁能帮忙把这笔钱‘洗’一下，开一张别的发票，我们再付钱。”你主动建议并试图通过第三方套取资金来解决问题。", isCorrect: false, outcome: { title: "结局：主动的欺诈", imageUrl: "8.png", /* <-- MODIFIED */ result: "你的行为构成了主动策划、参与财务欺诈的严重违纪违法行为。在调查中，你的角色被认定为掩盖事实的关键组织者之一，造成了恶劣影响。你因此受到 党内严重警告 和 政务记大过 的处分。", regulations: "《中国共产党纪律处分条例》（2023年版）第三十条、《中华人民共和国公职人员政务处分法》第三十九条。" }}
+                    ]
+                },
+                {
+                    character: "刘主任，部门负责人",
+                    scene: "现在，你来到了刘主任的视角。无论张伟和李静如何处理，那次违规宴请最终因一封匿名举报信而暴露，公司纪委已经介入。纪委的工作人员正坐在你的办公室里，谈话礼貌但语气坚定。",
+                    actImageUrl: "9.png", // <-- 场景图片 3
+                    dialogue: [{ speaker: "纪委工作人员", line: "刘主任，我们正在就上个月的一笔招待费进行初步核实，需要你说明一下相关情况。" }],
+                    monologue: "他们知道了。问题是，他们知道多少？我的事业、我的声誉……一切都悬于一线。晚宴是我的主意，但我的措辞很小心。张伟是具体执行的，李静是管钱的。我可以把责任推给他们。或者，也许我能让这事不了了之。又或者……我应该说实话。哪一步才是最明智的棋？",
+                    choicePrompt: "工作人员的目光坚定不移。这是决断的时刻。你的下一句话，将决定你的未来。",
+                    options: [
+                        { text: "深吸一口气，决定完全坦白。“我承担全部责任。这次晚宴是我的主意，是我因为对合同过于焦虑而向下属施压，要求他们超标准执行。我没有履行好领导职责，带了坏头。我愿意接受组织的处理决定，并个人承担所有相关费用。”", isCorrect: true },
+                        { text: "试图推卸责任。“我只是批准了一次常规的商务宴请。我相信我的下属会按流程办事。看来是张伟急于求成，在判断上犯了错误。我对具体的安排细节和费用并不知情。”", isCorrect: false, outcome: { title: "结局：推卸责任", imageUrl: "10.png", /* <-- MODIFIED */ result: "调查人员约谈了张伟和李静，谈话过程中，他们如实说出了你指示和施压的全过程。你试图嫁祸下属的行为被视为不诚实和品行不端。你因履行主体责任不力并在调查中提供不实信息，受到 撤销党内职务 和 政务撤职 处分。", regulations: "《中国共产党纪律处分条例》（2023年版）第八十一条、第一百三十条。" }},
+                        { text: "在正式谈话前，你把张伟和李静叫到一起，对他们说：“这只是个小误会，我们先统一一下口径。我们就说当时有其他部门的客人临时加入，是文书工作上的一个小失误。你们就按这个说法，我会保你们没事的。”", isCorrect: false, outcome: { title: "结局：串供", imageUrl: "11.png", /* <-- MODIFIED */ result: "这是一个灾难性的错误。组织串供被视为对纪律审查的直接对抗。工作人员在几人的供述中发现了矛盾之处。这使得你因“对抗组织审查”而被从重处理，后果是 留党察看二年 和 政务撤职 。", regulations: "《中国共产党纪律处分条例》（2023年版）第六十三条、第一百三十条。" }},
+                        { text: "调查人员离开后，你给另一部门一位人脉很广的高管打了电话。“老朋友，纪委为了一笔小招待费在查我。你能不能帮我打个招呼，看看能不能让他们按小问题处理，别上纲上线？”", isCorrect: false, outcome: { title: "结局：干预调查", imageUrl: "11.png", /* <-- MODIFIED */ result: "你试图利用人情关系干预调查的行为，被你求助的那位高管（他不想卷入你的丑闻）立即报告给了组织。这被视为滥用职权影响、破坏组织原则的恶劣行为，导致调查全面升级。你因在原有违纪行为之外，还存在干扰纪律审查工作的行为，被 留党察看二年 和 政务撤职 。", regulations: "《中国共产党纪律处分条例》（2023年版）第六十三条。" }}
+                    ]
+                }
+            ],
+            endings: {
+                success: { title: "结局：坚守红线", imageUrl: "12.png", /* <-- MODIFIED */ text: "整个接待得到了合规专业的安排，给天悦集团的合作伙伴留下了深刻印象，他们将贵公司纪律严明的文化视为可靠的象征，反而巩固了合作的基础。李静对财经纪律的坚守，保护了公司的资产，强化了问责文化。刘主任通过正确引导团队，展现了真正的领导力。你保护了自己，保护了同事，也保护了你的企业。从长远来看，廉洁是最好的经营策略。", finalWarning: "一顿饭，可能是一场腐败盛宴的开端。选择权，永远在你手中。党的纪律、国家的法律，不是写在纸上的条文，而是你职业生涯和人生的护栏。请步步为营，审慎而行。" },
+                failure: { title: "结局：迷途的代价", imageUrl: "11.png", /* <-- MODIFIED */ text: "一个错误的决定，引发了连锁反应。看似寻常的宴请，最终演变成一场损害公司利益和个人前途的风波。你在关键时刻的动摇，让你偏离了正确的轨道，付出了沉重的代价。这个教训提醒我们，纪律的红线任何时候都不能触碰。", finalWarning: "一顿饭，可能是一场腐败盛宴的开端。选择权，永远在你手中。党的纪律、国家的法律，不是写在纸上的条文，而是你职业生涯和人生的护栏。请步步为营，审慎而行。" }
+            }
+        };
+        const appendixData = [
+            { role: "第一幕：张伟 (选项B)", nature: "滥用职权，超标准接待并“打白条”", regs: "《纪律处分条例》第一百一十六条; 《政务处分法》第三十五条" }, { role: "第一幕：张伟 (选项C)", nature: "接受可能影响公正执行公务的宴请", regs: "《纪律处分条例》第一百一条" }, { role: "第一幕：张伟 (选项D)", nature: "违规公款消费高档菜肴酒水", regs: "《纪律处分条例》第一百一十六条; 《国有企业商务招待管理规定》" }, { role: "第二幕：李静 (选项B)", nature: "工作严重不负责任，参与财务造假", regs: "《纪律处分条例》第三十条; 《政务处分法》第三十九条" }, { role: "第二幕：李静 (选项C)", nature: "主动策划财务造假，隐匿违规费用", regs: "《纪律处分条例》第三十条; 《政务处分法》第三十九条" }, { role: "第二幕：李静 (选项D)", nature: "参与财务欺诈，教唆他人套取资金", regs: "《纪律处分条例》第三十条; 《政务处分法》第三十九条" }, { role: "第三幕：刘主任 (选项B)", nature: "对抗组织审查，推卸责任", regs: "《纪律处分条例》第八十一条, 第一百三十三条" }, { role: "第三幕：刘主任 (选项C)", nature: "组织串供，对抗组织审查", regs: "《纪律处分条例》第六十三条、第一百三十三条" }, { role: "第三幕：刘主任 (选项D)", nature: "利用职权影响干扰执纪执法工作", regs: "《纪律处分条例》第六十三条、第一百三十三条" },
+        ];
+        const moreScenariosData = [
+            { name: "剧本：清风度佳节，明月照廉途", link: "https://sisuphos59.github.io/MidAutumnFestival/" }, { name: "剧本：廉洁端午", link: "https://sisuphos59.github.io/Warning-game/V40530.html" }, { name: "剧本：即将推出...", link: "#" }, { name: "剧本：即将推出...", link: "#" }, { name: "剧本：即将推出...", link: "#" }, { name: "即将推出...", link: "#" }
+        ];
+
+        // --- GAME LOGIC ---
+        let currentAct = 0;
+        let integrityScore = 100;
+        const DEDUCTION_POINTS = 25;
+        let countdownInterval;
+        const mainContainer = document.querySelector('main');
+        const gameHeader = document.getElementById('game-header');
+        const integrityBar = document.getElementById('integrity-bar');
+        const integrityScoreDisplay = document.getElementById('integrity-score');
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function showScreen(screenId) {
+            const currentScreen = mainContainer.querySelector('.screen.active');
+            if (currentScreen) {
+                currentScreen.classList.add('exiting');
+                setTimeout(() => {
+                    currentScreen.classList.remove('active', 'exiting');
+                    const nextScreen = document.getElementById(screenId);
+                    if (nextScreen) {
+                        nextScreen.classList.add('active');
+                        nextScreen.scrollTop = 0;
+                    }
+                }, 500);
+            } else {
+                 const nextScreen = document.getElementById(screenId);
+                 if (nextScreen) {
+                    nextScreen.classList.add('active');
+                 }
+            }
+        }
+        function updateScoreDisplay() {
+            integrityScoreDisplay.textContent = integrityScore;
+            integrityBar.style.width = `${integrityScore}%`;
+            integrityBar.classList.toggle('bg-red-500', integrityScore < 50);
+            integrityBar.classList.toggle('bg-yellow-500', integrityScore >= 50 && integrityScore < 75);
+            integrityBar.classList.toggle('bg-blue-500', integrityScore >= 75);
+        }
+        function startGame() {
+            currentAct = 0;
+            integrityScore = 100;
+            updateScoreDisplay();
+            gameHeader.style.display = 'block';
+            showScreen('game-screen');
+            renderAct();
+        }
+
+        // --- MODIFIED FUNCTION ---
+        function renderAct() {
+            const actData = gameData.acts[currentAct];
+
+            // *** MODIFIED: Update act image src and alt text ***
+            const actImage = document.getElementById('act-image');
+            if(actImage) {
+                actImage.src = actData.actImageUrl;
+                actImage.alt = actData.character + " - 游戏场景"; // 更新alt文本
+            }
+            
+            document.getElementById('character-info').textContent = actData.character;
+            document.getElementById('scene-info').textContent = actData.scene;
+            const dialogueContainer = document.getElementById('dialogue-container');
+            dialogueContainer.innerHTML = '';
+            actData.dialogue.forEach(d => {
+                const dialogueElement = document.createElement('div');
+                dialogueElement.className = 'mb-3';
+                dialogueElement.innerHTML = `<p><span class="font-bold text-gray-900">${d.speaker}:</span> ${d.line}</p>`;
+                dialogueContainer.appendChild(dialogueElement);
+            });
+            document.getElementById('monologue-text').textContent = actData.monologue;
+            document.getElementById('choice-prompt').textContent = actData.choicePrompt;
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            const shuffledOptions = [...actData.options];
+            shuffleArray(shuffledOptions);
+
+            shuffledOptions.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-button w-full text-left p-4 rounded-lg';
+                button.innerHTML = `<p class="font-semibold text-gray-800">${String.fromCharCode(65 + index)}.</p><p class="text-gray-700">${option.text}</p>`;
+                button.onclick = () => selectOption(option);
+                optionsContainer.appendChild(button);
+            });
+        }
+        
+        function selectOption(option) {
+            if (option.isCorrect) {
+                // Correct choice: directly go to the next act without showing the result screen.
+                nextAct();
+            } else {
+                // Incorrect choice: show the result screen with details.
+                showScreen('result-screen');
+                const resultIconContainer = document.getElementById('result-icon-container');
+                const resultContent = document.getElementById('result-content');
+                const resultImageContainer = document.getElementById('result-image-container');
+                
+                document.getElementById('more-scenarios-button').classList.add('hidden');
+                document.getElementById('restart-button').classList.add('hidden');
+
+                integrityScore = Math.max(0, integrityScore - DEDUCTION_POINTS);
+                updateScoreDisplay();
+                
+                // Use the outcome-specific image
+                resultImageContainer.innerHTML = `<img src="${option.outcome.imageUrl}" alt="${option.outcome.title}" class="w-full h-full object-cover">`;
+                resultIconContainer.innerHTML = `<svg class="w-16 h-16 sm:w-20 sm:h-20 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                resultContent.innerHTML = `
+                    <h2 class="text-2xl sm:text-3xl font-bold text-red-600 mb-4">${option.outcome.title}</h2>
+                    <div class="text-left max-w-2xl mx-auto space-y-4 text-base sm:text-lg">
+                        <p class="text-gray-800"><span class="font-bold">处理结果：</span>${option.outcome.result}</p>
+                        <div class="p-4 bg-yellow-500/10 border-l-4 border-yellow-400 rounded-r-lg">
+                           <p class="font-bold text-yellow-800">相关法规：</p>
+                           <p class="text-sm sm:text-base text-yellow-700">${option.outcome.regulations}</p>
+                        </div>
+                    </div>
+                `;
+                startCountdownButton();
+            }
+        }
+
+        function startCountdownButton() {
+            const button = document.getElementById('action-button');
+            let countdown = 5;
+            button.disabled = true;
+            clearInterval(countdownInterval);
+            button.textContent = `我已了解后果 (${countdown})`;
+            countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    button.textContent = `我已了解后果 (${countdown})`;
+                } else {
+                    clearInterval(countdownInterval);
+                    button.disabled = false;
+                    button.textContent = '返回重选';
+                    button.onclick = returnToChoice;
+                }
+            }, 1000);
+        }
+        function returnToChoice() {
+            clearInterval(countdownInterval);
+            showScreen('game-screen');
+        }
+        function nextAct() {
+            currentAct++;
+            if (currentAct < gameData.acts.length) {
+                showScreen('game-screen');
+                renderAct();
+            } else {
+                showFinalEnding();
+            }
+        }
+        function showFinalEnding() {
+            showScreen('result-screen');
+            const resultIconContainer = document.getElementById('result-icon-container');
+            const resultContent = document.getElementById('result-content');
+            const actionButton = document.getElementById('action-button');
+            const resultImageContainer = document.getElementById('result-image-container');
+            const ending = (integrityScore === 100) ? gameData.endings.success : gameData.endings.failure;
+            
+            // 使用最终结局图片
+            resultImageContainer.innerHTML = `<img src="${ending.imageUrl}" alt="${ending.title}" class="w-full h-full object-cover">`;
+
+            resultIconContainer.innerHTML = integrityScore === 100 
+                ? `<svg class="w-16 h-16 sm:w-20 sm:h-20 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+                : `<svg class="w-16 h-16 sm:w-20 sm:h-20 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            let scoreHtml = integrityScore === 100 
+                ? `<p class="text-xl sm:text-2xl font-bold text-green-600 my-4">最终清廉指数: 100</p>`
+                : `<p class="text-xl sm:text-2xl font-bold text-red-600 my-4">最终清廉指数: ${integrityScore}</p>`;
+            resultContent.innerHTML = `
+                <h2 class="text-3xl sm:text-4xl font-bold text-blue-800 mb-6">${ending.title}</h2>
+                ${scoreHtml}
+                <p class="text-base sm:text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto mb-8">${ending.text}</p>
+                <div class="p-4 sm:p-6 bg-black/5 border-t-4 border-gray-500/30 rounded-lg max-w-3xl mx-auto">
+                    <p class="text-lg sm:text-xl font-bold text-gray-800">${ending.finalWarning}</p>
+                </div>
+            `;
+            actionButton.onclick = showAppendix;
+            actionButton.textContent = '查看违纪行为对照表';
+            document.getElementById('more-scenarios-button').classList.remove('hidden');
+            document.getElementById('restart-button').classList.remove('hidden');
+        }
+        function restartGame() {
+            gameHeader.style.display = 'none';
+            showScreen('start-screen');
+        }
+        function showAppendix() {
+            const tableBody = document.querySelector('#appendix-table tbody');
+            tableBody.innerHTML = '';
+            appendixData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-black/5";
+                row.innerHTML = `<td class="py-3 px-4 border-b border-black/10 text-sm text-gray-800">${item.role}</td><td class="py-3 px-4 border-b border-black/10 text-sm text-gray-800">${item.nature}</td><td class="py-3 px-4 border-b border-black/10 text-sm text-gray-600">${item.regs}</td>`;
+                tableBody.appendChild(row);
+            });
+            showScreen('appendix-screen');
+        }
+        function hideAppendix() {
+            showScreen('result-screen');
+        }
+        function showMoreScenarios() {
+            const container = document.getElementById('more-scenarios-container');
+            container.innerHTML = ''; // Clear previous content
+            moreScenariosData.forEach(scenario => {
+                const cardHTML = `
+                    <a href="${scenario.link}" class="scenario-card block rounded-lg shadow-md overflow-hidden">
+                        <div class="w-full aspect-[4/3] bg-black/10 overflow-hidden">
+                            <img src="https://placehold.co/600x400/60a5fa/ffffff?text=${encodeURIComponent(scenario.name)}" alt="${scenario.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg text-gray-800">${scenario.name}</h3>
+                        </div>
+                    </a>`;
+                container.innerHTML += cardHTML;
+            });
+            showScreen('more-scenarios-screen');
+        }
+    </script>
+</body>
+</html>
+
